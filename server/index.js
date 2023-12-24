@@ -7,6 +7,15 @@ config({
   path: "./.env",
 });
 
+// routes
+app.get("/test", (req, res) => {
+  res.json("test ok");
+});
+
+app.post('/register', (req, res) => {
+    
+})
+
 // middlewares
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
