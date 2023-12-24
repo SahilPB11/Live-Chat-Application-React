@@ -11,7 +11,6 @@ const Register = () => {
       username: userName,
       password,
     });
-    console.log(response);
   }
   return (
     <div className="bg-blue-50 h-screen flex items-center">
