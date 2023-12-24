@@ -5,6 +5,7 @@ import User from "./models/User.js";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import bcrypt from "bcrypt";
 export const app = express();
 config({
   path: "./.env",
@@ -43,6 +44,35 @@ app.get("/profile", (req, res) => {
   }
 });
 
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    let user = await User.findOne({ username }); // Using findOne is more appropriate for finding a single document
+    if (!user) {
+      return res
+        .status(401)
+        .send({ message: "User Not found. Please Register First." });
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, user.password);
+
+    if (isPasswordValid) {
+      const token = jwt.sign({ userId: user._id, username }, jwtSecret);
+      return res
+        .cookie("token", token, { sameSite: "none", secure: true })
+        .status(201)
+        .json({
+          _id: user._id,
+        });
+    } else {
+      return res.status(401).send({ message: "Password is incorrect." });
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).send({ message: "Internal Server Error." });
+  }
+});
+
 app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -51,7 +81,8 @@ app.post("/register", async (req, res) => {
       return res
         .status(400)
         .send({ message: "user already exist please log in" });
-    user = await User.create({ username, password });
+    const hashPassword = bcrypt.hashSync(password, 10);
+    user = await User.create({ username, password: hashPassword });
     const token = await jwt.sign({ userId: user._id, username }, jwtSecret);
     return res
       .cookie("token", token, { sameSite: "none", secure: true })
