@@ -52,13 +52,12 @@ app.post("/register", async (req, res) => {
         .status(400)
         .send({ message: "user already exist please log in" });
     user = await User.create({ username, password });
-    const token = await jwt.sign({ userId: user._id }, jwtSecret);
+    const token = await jwt.sign({ userId: user._id, username }, jwtSecret);
     return res
       .cookie("token", token, { sameSite: "none", secure: true })
       .status(201)
       .json({
         _id: user._id,
-        username,
       });
   } catch (error) {
     console.log(error.message);
