@@ -27,6 +27,8 @@ const Chat = () => {
     const messageData = JSON.parse(ev.data);
     if ("online" in messageData) {
       showOnlinePeople(messageData?.online);
+    } else {
+      console.log(messageData);
     }
   }
   // for apitalize the first letter of user
@@ -43,10 +45,8 @@ const Chat = () => {
     e.preventDefault();
     ws.send(
       JSON.stringify({
-        message: {
-          recipient: selectedUserId,
-          text: newMessageText,
-        },
+        recipient: selectedUserId,
+        text: newMessageText,
       })
     );
     setNewMessageText("");
