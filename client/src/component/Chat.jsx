@@ -8,6 +8,7 @@ const Chat = () => {
   const [onlinePeople, setOnlinePeople] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
   const { username, id } = useContext(UserContext);
+  const [newMessageText, setNewMessageText] = useState("");
   const url = import.meta.env.VITE_APP_WS_SERVER_URL;
   useEffect(() => {
     const ws = new WebSocket(`ws://${url}`);
@@ -36,6 +37,20 @@ const Chat = () => {
   // removing ourself from usersList
   const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
+
+  // function for send message
+  function sendMessage(e) {
+    e.preventDefault();
+    ws.send(
+      JSON.stringify({
+        message: {
+          recipient: selectedUserId,
+          text: newMessageText,
+        },
+      })
+    );
+    setNewMessageText("");
+  }
 
   return (
     <div className="flex h-screen">
@@ -67,35 +82,54 @@ const Chat = () => {
         <div className="flex-grow">
           {!selectedUserId && (
             <div className="flex h-full items-center justify-center">
-              <div className="text-gray-300">
-                &larr;Select a person from sidebar
+              <div className="text-gray-300 flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-8 h-6"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75 0 0 0-1.06-1.06l-3 3Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Select a person from sidebar</span>
               </div>
             </div>
           )}{" "}
         </div>
-        <div className="flex gap-1">
-          <input
-            type="text"
-            className="bg-white border p-2 flex-grow rounded-xl"
-            placeholder="Type here"
-          />
-          <button className="bg-blue-500 p-2 text-white rounded-xl">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
+        {!!selectedUserId && (
+          <form className="flex gap-1 typebar" onSubmit={sendMessage}>
+            <input
+              type="text"
+              value={newMessageText}
+              onChange={(e) => setNewMessageText(e.target.value)}
+              className="bg-white border  p-2 flex-grow rounded-xl "
+              placeholder="Type here"
+            />
+            <button
+              className="bg-blue-500 p-2 text-white rounded-xl"
+              type="submit"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
-              />
-            </svg>
-          </button>
-        </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+                />
+              </svg>
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

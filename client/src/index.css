@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.typebar input:focus {
+  border-color: cyan; /* Change the border color to cyan */
+  outline: none; /* Optionally remove the default focus outline */
+}

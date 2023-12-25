@@ -123,6 +123,7 @@ wss.on("connection", (connection, req) => {
     }
   }
 
+  // notify everyone about online people when someone connects
   [...wss.clients].forEach((client) => {
     client.send(
       JSON.stringify({
