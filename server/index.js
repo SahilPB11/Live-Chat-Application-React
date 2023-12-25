@@ -6,7 +6,9 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcrypt";
-export const app = express();
+import { WebSocketServer } from "ws";
+import connectDB from "./ConnectDb/connectDb.js";
+const app = express();
 config({
   path: "./.env",
 });
@@ -17,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 const jwtSecret = process.env.JWT_Secret;
+const port = process.env.PORT;
 
 // routes
 app.use(
@@ -93,4 +96,41 @@ app.post("/register", async (req, res) => {
   } catch (error) {
     console.log(error.message);
   }
+});
+
+connectDB();
+const server = app.listen(port, () =>
+  console.log(`Server is Working on ${port}`)
+);
+const wss = new WebSocketServer({ server: server }); // Initialize WebSocket server
+
+wss.on("connection", (connection, req) => {
+  const cookies = req?.headers?.cookie;
+  if (cookies) {
+    const tokenCookieString = cookies
+      .split("; ")
+      .find((str) => str.startsWith("token="));
+    if (tokenCookieString) {
+      const token = tokenCookieString.split("=")[1];
+      if (token) {
+        jwt.verify(token, jwtSecret, {}, (err, userData) => {
+          if (err) throw err;
+          const { userId, username } = userData;
+          connection.userId = userId;
+          connection.username = username;
+        });
+      }
+    }
+  }
+
+  [...wss.clients].forEach((client) => {
+    client.send(
+      JSON.stringify({
+        online: [...wss.clients].map((c) => ({
+          userId: c?.userId,
+          username: c?.username,
+        })),
+      })
+    );
+  });
 });
