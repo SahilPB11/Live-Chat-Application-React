@@ -9,6 +9,7 @@ const Chat = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const { username, id } = useContext(UserContext);
   const [newMessageText, setNewMessageText] = useState("");
+  const [messages, setMessages] = useState([]);
   const url = import.meta.env.VITE_APP_WS_SERVER_URL;
   useEffect(() => {
     const ws = new WebSocket(`ws://${url}`);
@@ -25,10 +26,14 @@ const Chat = () => {
   }
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
+    console.log(ev, messageData);
     if ("online" in messageData) {
       showOnlinePeople(messageData?.online);
     } else {
-      console.log(messageData);
+      setMessages((prev) => [
+        ...prev,
+        { isOur: false, text: messageData?.text },
+      ]);
     }
   }
   // for apitalize the first letter of user
@@ -50,6 +55,7 @@ const Chat = () => {
       })
     );
     setNewMessageText("");
+    setMessages((prev) => [...prev, { text: newMessageText, isOur: true }]);
   }
 
   return (
@@ -98,7 +104,15 @@ const Chat = () => {
                 <span>Select a person from sidebar</span>
               </div>
             </div>
-          )}{" "}
+          )}
+
+          {!!selectedUserId && (
+            <div>
+              {messages.map((message) => (
+                <div>{message.text}</div>
+              ))}
+            </div>
+          )}
         </div>
         {!!selectedUserId && (
           <form className="flex gap-1 typebar" onSubmit={sendMessage}>

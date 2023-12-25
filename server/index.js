@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcrypt";
 import { WebSocketServer } from "ws";
 import connectDB from "./ConnectDb/connectDb.js";
+import Message from "./models/message.js";
 const app = express();
 config({
   path: "./.env",
@@ -129,9 +130,12 @@ wss.on("connection", (connection, req) => {
     const messageData = JSON.parse(message.toString());
     const { recipient, text } = messageData;
     if (recipient && text) {
+
       [...wss.clients]
         .filter((c) => c.userId === recipient)
-        .forEach((c) => c.send(JSON.stringify({ text: text })));
+        .forEach((c) =>
+          c.send(JSON.stringify({ text: text, sender: connection?.userId }))
+        );
     }
   });
 
