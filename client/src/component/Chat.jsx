@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "../context/UserContext";
+import _ from "lodash";
 
 const Chat = () => {
   const [ws, setWs] = useState(null);
@@ -24,26 +25,20 @@ const Chat = () => {
     });
     setOnlinePeople(people);
   }
+
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
-    console.log(ev, messageData);
     if ("online" in messageData) {
       showOnlinePeople(messageData?.online);
-    } else {
+    } else if ("text" in messageData) {
       setMessages((prev) => [
         ...prev,
-        { isOur: false, text: messageData?.text },
+        {
+          ...messageData,
+        },
       ]);
     }
   }
-  // for apitalize the first letter of user
-  function capitalizeFirstLetter(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  // removing ourself from usersList
-  const onlinePeopleExclOurUser = { ...onlinePeople };
-  delete onlinePeopleExclOurUser[id];
 
   // function for send message
   function sendMessage(e) {
@@ -54,9 +49,29 @@ const Chat = () => {
         text: newMessageText,
       })
     );
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: newMessageText,
+        sender: id,
+        recipient: selectedUserId,
+      },
+    ]);
     setNewMessageText("");
-    setMessages((prev) => [...prev, { text: newMessageText, isOur: true }]);
   }
+  // for apitalize the first letter of user
+  function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  // removing ourself from usersList
+  const onlinePeopleExclOurUser = { ...onlinePeople };
+  delete onlinePeopleExclOurUser[id];
+
+  // remove duplicate messages we are getting same message two times because of mounted
+  const messageWithoutDupes = _.uniqBy(messages, "_id");
+
+  messageWithoutDupes.map((message) => console.log(message));
 
   return (
     <div className="flex h-screen">
@@ -108,8 +123,13 @@ const Chat = () => {
 
           {!!selectedUserId && (
             <div>
-              {messages.map((message) => (
-                <div>{message.text}</div>
+              {messageWithoutDupes?.map((message, index) => (
+                <div key={index}>
+                  
+                  <p>{message.sender}</p>
+                  <p>{id}</p>
+                 <p> {message?.text}</p>
+                </div>
               ))}
             </div>
           )}

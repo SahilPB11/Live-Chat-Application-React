@@ -126,15 +126,26 @@ wss.on("connection", (connection, req) => {
     }
   }
 
-  connection.on("message", (message) => {
+  connection.on("message", async (message) => {
     const messageData = JSON.parse(message.toString());
     const { recipient, text } = messageData;
     if (recipient && text) {
-
+      const messageDocument = await Message.create({
+        sender: connection?.userId,
+        recipient: recipient,
+        text: text,
+      });
       [...wss.clients]
         .filter((c) => c.userId === recipient)
         .forEach((c) =>
-          c.send(JSON.stringify({ text: text, sender: connection?.userId }))
+          c.send(
+            JSON.stringify({
+              text: text,
+              sender: connection?.userId,
+              recipient,
+              id: messageDocument._id,
+            })
+          )
         );
     }
   });
