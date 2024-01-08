@@ -52,6 +52,7 @@ const Chat = () => {
     setMessages((prev) => [
       ...prev,
       {
+        id: Date.now(),
         text: newMessageText,
         sender: id,
         recipient: selectedUserId,
@@ -69,9 +70,9 @@ const Chat = () => {
   delete onlinePeopleExclOurUser[id];
 
   // remove duplicate messages we are getting same message two times because of mounted
-  const messageWithoutDupes = _.uniqBy(messages, "_id");
+  const messageWithoutDupes = _.uniqBy(messages, "id");
 
-  messageWithoutDupes.map((message) => console.log(message));
+  // messageWithoutDupes.map((message) => console.log(message));
 
   return (
     <div className="flex h-screen">
@@ -102,7 +103,7 @@ const Chat = () => {
       <div className="flex flex-col bg-blue-100 w-5/6 p-1">
         <div className="flex-grow">
           {!selectedUserId && (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-screen items-center justify-center">
               <div className="text-gray-300 flex items-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -122,15 +123,28 @@ const Chat = () => {
           )}
 
           {!!selectedUserId && (
-            <div>
+            <div className="relative h-full">
+            <div className="overflow-y-scroll scroll-smooth absolute inset-0">
               {messageWithoutDupes?.map((message, index) => (
-                <div key={index}>
-                  
-                  <p>{message.sender}</p>
-                  <p>{id}</p>
-                 <p> {message?.text}</p>
+                <div
+                  key={index}
+                  className={message?.sender === id ? "text-right" : ""}
+                >
+                  <div
+                    className={
+                      "text-left m-2 text-sm rounded-xl inline-block p-2 " +
+                      (message?.sender === id
+                        ? "bg-blue-500 text-white"
+                        : "bg-white text-gray-500")
+                    }
+                  >
+                    <p>{message.sender}</p>
+                    <p>{id}</p>
+                    <p> {message?.text}</p>
+                  </div>
                 </div>
               ))}
+            </div>
             </div>
           )}
         </div>
