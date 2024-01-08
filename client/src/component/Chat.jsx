@@ -3,6 +3,7 @@ import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "../context/UserContext";
 import _ from "lodash";
+import { useRef } from "react";
 
 const Chat = () => {
   const [ws, setWs] = useState(null);
@@ -11,6 +12,7 @@ const Chat = () => {
   const { username, id } = useContext(UserContext);
   const [newMessageText, setNewMessageText] = useState("");
   const [messages, setMessages] = useState([]);
+  const divUnderMessage = useRef();
   const url = import.meta.env.VITE_APP_WS_SERVER_URL;
   useEffect(() => {
     const ws = new WebSocket(`ws://${url}`);
@@ -60,6 +62,14 @@ const Chat = () => {
     ]);
     setNewMessageText("");
   }
+
+  useEffect(() => {
+    const div = divUnderMessage.current;
+    if (div) {
+      div.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages]);
+
   // for apitalize the first letter of user
   function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -124,27 +134,28 @@ const Chat = () => {
 
           {!!selectedUserId && (
             <div className="relative h-full">
-            <div className="overflow-y-scroll scroll-smooth absolute inset-0">
-              {messageWithoutDupes?.map((message, index) => (
-                <div
-                  key={index}
-                  className={message?.sender === id ? "text-right" : ""}
-                >
+              <div className="overflow-y-scroll scroll-smooth absolute inset-0">
+                {messageWithoutDupes?.map((message, index) => (
                   <div
-                    className={
-                      "text-left m-2 text-sm rounded-xl inline-block p-2 " +
-                      (message?.sender === id
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-500")
-                    }
+                    key={index}
+                    className={message?.sender === id ? "text-right" : ""}
                   >
-                    <p>{message.sender}</p>
-                    <p>{id}</p>
-                    <p> {message?.text}</p>
+                    <div
+                      className={
+                        "text-left m-2 text-sm rounded-xl inline-block p-2 " +
+                        (message?.sender === id
+                          ? "bg-blue-500 text-white"
+                          : "bg-white text-gray-500")
+                      }
+                    >
+                      <p>{message.sender}</p>
+                      <p>{id}</p>
+                      <p> {message?.text}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+                <div ref={divUnderMessage}></div>
+              </div>
             </div>
           )}
         </div>
