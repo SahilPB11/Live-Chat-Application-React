@@ -4,7 +4,7 @@ import Avatar from "./Avatar";
 const Contact = ({ id, onClick, selected, username, online }) => {
   // for apitalize the first letter of user
   function capitalizeFirstLetter(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    return str?.charAt(0).toUpperCase() + str?.slice(1);
   }
   return (
     <div
