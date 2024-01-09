@@ -89,10 +89,9 @@ const Chat = () => {
       const OfflinePeopleArr = res.data
         .filter((p) => p._id !== id)
         .filter((p) => !Object.keys(onlinePeople).includes(p._id));
-      // setOfflinePeople(allOfflinePeople);
       const OfflinePeopleObj = {};
       OfflinePeopleArr.forEach((p) => {
-        OfflinePeopleObj[p._id] = p;
+        OfflinePeopleObj[p._id] = p.username;
       });
       setOfflinePeople(OfflinePeopleObj);
     });
@@ -107,8 +106,6 @@ const Chat = () => {
     }
   }, [selectedUserId]);
 
-
-
   // removing ourself from usersList
   const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
@@ -122,6 +119,7 @@ const Chat = () => {
     <div className="flex h-screen">
       <div className=" bg-white w-2/6  pt-4">
         <Logo />
+        {/* // this object to show all online people  */}
         {Object.keys(onlinePeopleExclOurUser)?.map((userId) => (
           <Contact
             key={userId}
@@ -129,6 +127,18 @@ const Chat = () => {
             username={onlinePeopleExclOurUser[userId]}
             onClick={() => setSelectedUserId(userId)}
             selected={userId === selectedUserId}
+            online={true}
+          />
+        ))}
+        {/* // this object to show all offline people  */}
+        {Object.keys(offlinePeople)?.map((userId) => (
+          <Contact
+            key={userId}
+            id={userId}
+            username={offlinePeople[userId]}
+            onClick={() => setSelectedUserId(userId)}
+            selected={userId === selectedUserId}
+            online={false}
           />
         ))}
       </div>

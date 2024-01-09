@@ -20,9 +20,12 @@ const Avatar = ({ userId, username, online }) => {
       className={`relative w-10 h-10 ${color} rounded-full flex items-center`}
     >
       <div className="text-center w-full opacity-55 text-xl">{username[0]}</div>
-      {online && (
-        <div className="absolute w-3 h-3 bg-green-300 right-0 bottom-0 rounded-lg border border-white shadow-sm shadow-black"></div>
-      )}
+
+      <div
+        className={`absolute w-3 h-3 ${
+          online ? "bg-green-300" : "bg-gray-400"
+        } right-0 bottom-0 rounded-lg border border-white shadow-sm shadow-black`}
+      ></div>
     </div>
   );
 };
