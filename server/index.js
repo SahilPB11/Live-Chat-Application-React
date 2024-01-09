@@ -30,8 +30,37 @@ app.use(
   })
 );
 
+async function getUserDatafromRequest(req) {
+  try {
+    const token = req?.cookies?.token;
+    if (token) {
+      const userData = jwt.verify(token, jwtSecret);
+      if (!userData) return "no token";
+      else return userData;
+    }
+  } catch (error) {
+    return error.message;
+  }
+}
+
 app.get("/test", (req, res) => {
   res.json("test ok");
+});
+
+app.get("/messages/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userData = await getUserDatafromRequest(req);
+    const ourUserId = userData.userId;
+    const messages = await Message.find({
+      sender: { $in: [userId, ourUserId] },
+      recipient: { $in: [userId, ourUserId] },
+    }).sort({ createdAt: 1 });
+    return res.status(200).send(messages);
+  } catch (error) {
+    console.log(error.message);
+    res.json(400).send(error);
+  }
 });
 
 app.get("/profile", (req, res) => {
@@ -87,7 +116,7 @@ app.post("/register", async (req, res) => {
         .send({ message: "user already exist please log in" });
     const hashPassword = bcrypt.hashSync(password, 10);
     user = await User.create({ username, password: hashPassword });
-    const token = await jwt.sign({ userId: user._id, username }, jwtSecret);
+    const token = jwt.sign({ userId: user._id, username }, jwtSecret);
     return res
       .cookie("token", token, { sameSite: "none", secure: true })
       .status(201)
@@ -143,7 +172,7 @@ wss.on("connection", (connection, req) => {
               text: text,
               sender: connection?.userId,
               recipient,
-              id: messageDocument._id,
+              _id: messageDocument._id,
             })
           )
         );

@@ -4,6 +4,7 @@ import Logo from "./Logo";
 import { UserContext } from "../context/UserContext";
 import _ from "lodash";
 import { useRef } from "react";
+import axios from "axios";
 
 const Chat = () => {
   const [ws, setWs] = useState(null);
@@ -15,10 +16,20 @@ const Chat = () => {
   const divUnderMessage = useRef();
   const url = import.meta.env.VITE_APP_WS_SERVER_URL;
   useEffect(() => {
+    connectToWS();
+  }, []);
+
+  function connectToWS() {
     const ws = new WebSocket(`ws://${url}`);
     setWs(ws);
     ws.addEventListener("message", handleMessage);
-  }, []);
+    ws.addEventListener("close", () => {
+      setTimeout(() => {
+        console.log("Disconnected, Trying to reconnect");
+        connectToWS();
+      }, 1200);
+    });
+  }
 
   function showOnlinePeople(peopleArray) {
     const people = {};
@@ -54,7 +65,7 @@ const Chat = () => {
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        _id: Date.now(),
         text: newMessageText,
         sender: id,
         recipient: selectedUserId,
@@ -70,6 +81,14 @@ const Chat = () => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (selectedUserId) {
+      axios.get(`/messages/${selectedUserId}`).then((res) => {
+        setMessages(res.data);
+      });
+    }
+  }, [selectedUserId]);
+
   // for apitalize the first letter of user
   function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -80,7 +99,7 @@ const Chat = () => {
   delete onlinePeopleExclOurUser[id];
 
   // remove duplicate messages we are getting same message two times because of mounted
-  const messageWithoutDupes = _.uniqBy(messages, "id");
+  const messageWithoutDupes = _.uniqBy(messages, "_id");
 
   // messageWithoutDupes.map((message) => console.log(message));
 
@@ -148,8 +167,6 @@ const Chat = () => {
                           : "bg-white text-gray-500")
                       }
                     >
-                      <p>{message.sender}</p>
-                      <p>{id}</p>
                       <p> {message?.text}</p>
                     </div>
                   </div>
