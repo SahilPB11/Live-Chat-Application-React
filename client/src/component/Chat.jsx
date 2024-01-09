@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
-import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "../context/UserContext";
 import _ from "lodash";
 import { useRef } from "react";
 import axios from "axios";
+import Contact from "./Contact";
 
 const Chat = () => {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState({});
+  const [offlinePeople, setOfflinePeople] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
   const { username, id } = useContext(UserContext);
   const [newMessageText, setNewMessageText] = useState("");
@@ -74,6 +75,7 @@ const Chat = () => {
     setNewMessageText("");
   }
 
+  // this useEffect when we send a message or recieve a message it will scroll down automatically on chat section
   useEffect(() => {
     const div = divUnderMessage.current;
     if (div) {
@@ -81,6 +83,22 @@ const Chat = () => {
     }
   }, [messages]);
 
+  // this eefect i am using to get all offline users also
+  useEffect(() => {
+    axios.get("/people").then((res) => {
+      const OfflinePeopleArr = res.data
+        .filter((p) => p._id !== id)
+        .filter((p) => !Object.keys(onlinePeople).includes(p._id));
+      // setOfflinePeople(allOfflinePeople);
+      const OfflinePeopleObj = {};
+      OfflinePeopleArr.forEach((p) => {
+        OfflinePeopleObj[p._id] = p;
+      });
+      setOfflinePeople(OfflinePeopleObj);
+    });
+  }, [onlinePeople]);
+
+  // this useEffect will work whenever i will select a user and it will fetch all the chat between us to show in chat section
   useEffect(() => {
     if (selectedUserId) {
       axios.get(`/messages/${selectedUserId}`).then((res) => {
@@ -89,10 +107,7 @@ const Chat = () => {
     }
   }, [selectedUserId]);
 
-  // for apitalize the first letter of user
-  function capitalizeFirstLetter(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
+
 
   // removing ourself from usersList
   const onlinePeopleExclOurUser = { ...onlinePeople };
@@ -108,25 +123,13 @@ const Chat = () => {
       <div className=" bg-white w-2/6  pt-4">
         <Logo />
         {Object.keys(onlinePeopleExclOurUser)?.map((userId) => (
-          <div
-            className={`border-b border-gray-100  flex items-center gap-2 cursor-pointer ${
-              selectedUserId === userId ? "bg-blue-50" : ""
-            }`}
+          <Contact
             key={userId}
+            id={userId}
+            username={onlinePeopleExclOurUser[userId]}
             onClick={() => setSelectedUserId(userId)}
-          >
-            {userId === selectedUserId && (
-              <div className="w-1 bg-blue-500 h-12 rounded-r-md"></div>
-            )}
-
-            <div className="flex gap-2 py-2 pl-4 items-center">
-              <Avatar userId={userId} username={onlinePeople[userId]} />
-              <span className="text-gray-800">
-                {" "}
-                {capitalizeFirstLetter(onlinePeople[userId])}
-              </span>
-            </div>
-          </div>
+            selected={userId === selectedUserId}
+          />
         ))}
       </div>
       <div className="flex flex-col bg-blue-100 w-5/6 p-1">

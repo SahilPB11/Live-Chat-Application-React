@@ -63,6 +63,16 @@ app.get("/messages/:userId", async (req, res) => {
   }
 });
 
+app.get("/people", async (req, res) => {
+  try {
+    const users = await User.find({}, { _id: 1, username: 1 });
+    return res.send(users);
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).send({ message: "Internal Server Error." });
+  }
+});
+
 app.get("/profile", (req, res) => {
   const token = req?.cookies?.token;
   if (token) {
