@@ -19,7 +19,7 @@ const Avatar = ({ userId, username, online }) => {
     <div
       className={`relative w-10 h-10 ${color} rounded-full flex items-center`}
     >
-      <div className="text-center w-full opacity-55 text-xl">{username[0]}</div>
+      <div className="text-center w-full opacity-55 text-xl">{username}</div>
 
       <div
         className={`absolute w-3 h-3 ${

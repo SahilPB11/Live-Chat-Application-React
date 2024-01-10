@@ -43,6 +43,7 @@ const Chat = () => {
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
     if ("online" in messageData) {
+      console.log(messageData);
       showOnlinePeople(messageData?.online);
     } else if ("text" in messageData) {
       setMessages((prev) => [
@@ -77,8 +78,11 @@ const Chat = () => {
 
   // function for logout
   function logout() {
+    if (ws) {
+      ws.close(); // Explicitly close WebSocket connection
+    }
     axios.post("/logout").then(() => {
-      setWs(null);
+      setWs(null); // Reset ws state
       setId(null);
       setUserName(null);
     });
@@ -98,9 +102,9 @@ const Chat = () => {
       .get("/people")
       .then((res) => {
         if (res?.data) {
-          const OfflinePeopleArr = res.data
+          const OfflinePeopleArr = res?.data
             .filter((p) => p._id !== id)
-            .filter((p) => !Object.keys(onlinePeople).includes(p._id));
+            .filter((p) => !Object.keys(onlinePeople).includes(p?._id));
           const OfflinePeopleObj = {};
           OfflinePeopleArr.forEach((p) => {
             OfflinePeopleObj[p._id] = p.username;

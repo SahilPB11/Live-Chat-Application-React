@@ -6,6 +6,7 @@ const Contact = ({ id, onClick, selected, username, online }) => {
   function capitalizeFirstLetter(str) {
     return str?.charAt(0).toUpperCase() + str?.slice(1);
   }
+  if(username === undefined) return;
   return (
     <div
       className={`border-b border-gray-100  flex items-center gap-2 cursor-pointer ${

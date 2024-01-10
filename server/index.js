@@ -21,6 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 const jwtSecret = process.env.JWT_Secret;
 const port = process.env.PORT;
+const activeConnections = new Set();
 
 // routes
 app.use(
@@ -117,10 +118,29 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
+  const token = req?.cookies?.token;
+
+  if (token) {
+    jwt.verify(token, jwtSecret, {}, (err, userData) => {
+      if (err) throw err;
+
+      const userId = userData.userId;
+
+      // Find the WebSocket connection associated with the user and terminate it
+      for (const connection of activeConnections) {
+        if (connection.userId === userId) {
+          connection.terminate(); // Terminate the WebSocket connection
+          activeConnections.delete(connection); // Remove the connection from the set
+          break; // Exit the loop once the connection is found and terminated
+        }
+      }
+    });
+  }
+  // Clear the token cookie
   return res
     .cookie("token", "", { sameSite: "none", secure: true })
     .status(200)
-    .json("ok");
+    .json("Logged out successfully");
 });
 
 app.post("/register", async (req, res) => {
@@ -151,21 +171,12 @@ const server = app.listen(port, () =>
 );
 const wss = new WebSocketServer({ server: server }); // Initialize WebSocket server
 
-function notifyAboutOnlinePeople() {
-  [...wss.clients].forEach((client) => {
-    client.send(
-      JSON.stringify({
-        online: [...wss.clients].map((c) => ({
-          userId: c?.userId,
-          username: c?.username,
-        })),
-      })
-    );
-  });
-}
-
 wss.on("connection", (connection, req) => {
   connection.isAlive = true;
+
+  // Add the connection to the set of active connections
+  // here i am adding the conection who is coming online
+  activeConnections.add(connection);
 
   connection.timer = setInterval(() => {
     connection.ping();
@@ -173,14 +184,26 @@ wss.on("connection", (connection, req) => {
       connection.isAlive = false;
       clearInterval(connection.timer);
       connection.terminate();
-      notifyAboutOnlinePeople();
       console.log("dead");
+      notifyAboutOnlinePeople();
     }, 1000);
   }, 5000);
 
   connection.on("pong", () => {
     clearTimeout(connection.deathTimer);
   });
+
+  // this function for sending the active online users users 
+  function notifyAboutOnlinePeople() {
+    const activeClients = [...wss.clients].filter((client) => client.isAlive);
+    const onlineUsers = activeClients.map((c) => ({
+      userId: c.userId,
+      username: c.username,
+    }));
+    activeClients.forEach((client) => {
+      client.send(JSON.stringify({ online: onlineUsers }));
+    });
+  }
 
   const cookies = req?.headers?.cookie;
   // read username and userid from the cookie for the conncection
@@ -227,8 +250,4 @@ wss.on("connection", (connection, req) => {
 
   // notify everyone about online people when someone connects
   notifyAboutOnlinePeople();
-});
-
-wss.on("close", (data) => {
-  console.log("disconnect", data);
 });
