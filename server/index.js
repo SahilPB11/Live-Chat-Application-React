@@ -9,12 +9,15 @@ import bcrypt from "bcrypt";
 import { WebSocketServer } from "ws";
 import connectDB from "./ConnectDb/connectDb.js";
 import Message from "./models/message.js";
+import fs from "fs";
+import path from "path";
 const app = express();
 config({
   path: "./.env",
 });
 
 // middlewares
+app.use("/uploads", express.static(process.cwd() + "/uploads"));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -184,8 +187,8 @@ wss.on("connection", (connection, req) => {
       connection.isAlive = false;
       clearInterval(connection.timer);
       connection.terminate();
-      console.log("dead");
       notifyAboutOnlinePeople();
+      console.log("dead");
     }, 1000);
   }, 5000);
 
@@ -193,7 +196,7 @@ wss.on("connection", (connection, req) => {
     clearTimeout(connection.deathTimer);
   });
 
-  // this function for sending the active online users users 
+  // this function for sending the active online users users
   function notifyAboutOnlinePeople() {
     const activeClients = [...wss.clients].filter((client) => client.isAlive);
     const onlineUsers = activeClients.map((c) => ({
@@ -226,12 +229,28 @@ wss.on("connection", (connection, req) => {
 
   connection.on("message", async (message) => {
     const messageData = JSON.parse(message.toString());
-    const { recipient, text } = messageData;
-    if (recipient && text) {
+    const { recipient, text, file } = messageData;
+    let fileName = null;
+    if (file) {
+      const parts = file.name.split(".");
+      const ext = parts[parts.length - 1];
+      fileName = Date.now() + "." + ext;
+      const filePath = path.join(process.cwd(), "/uploads/" + fileName);
+      const bufferData = Buffer.from(file?.data?.split(",")[1], "base64");
+      fs.writeFile(filePath, bufferData, (err) => {
+        if (err) {
+          console.error("Error saving file:", err);
+        } else {
+          console.log("File saved:", filePath);
+        }
+      });
+    }
+    if (recipient && (text || file)) {
       const messageDocument = await Message.create({
         sender: connection?.userId,
         recipient: recipient,
         text: text,
+        file: file ? fileName : null,
       });
       [...wss.clients]
         .filter((c) => c.userId === recipient)
@@ -241,6 +260,7 @@ wss.on("connection", (connection, req) => {
               text: text,
               sender: connection?.userId,
               recipient,
+              file: file ? fileName : null,
               _id: messageDocument._id,
             })
           )
