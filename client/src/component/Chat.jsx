@@ -26,7 +26,6 @@ const Chat = () => {
     ws.addEventListener("message", handleMessage);
     ws.addEventListener("close", () => {
       setTimeout(() => {
-        console.log("Disconnected, Trying to reconnect");
         connectToWS();
       }, 1200);
     });
@@ -43,7 +42,6 @@ const Chat = () => {
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
     if ("online" in messageData) {
-      console.log(messageData);
       showOnlinePeople(messageData?.online);
     } else if ("text" in messageData) {
       setMessages((prev) => [
